@@ -13,6 +13,21 @@
 
 #define MAXARGS 10
 
+char* osfind(const char *msg){
+  int s = strlen(msg);
+  int i = 0;
+  while(i != s){
+    if (*msg == 'o'){
+      if(*(msg+1) == 's') return (char *)msg;
+    
+    }
+    msg++;
+    i++;
+  }
+  return 0;
+
+}
+
 struct cmd {
   int type;
 };
@@ -76,6 +91,54 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit(1);
+
+    if (ecmd->argv[0] && strcmp(ecmd->argv[0], "!")==0 && ecmd->argv[1]){
+      int total = 0;
+      for (int i = 0; ecmd->argv[i]; i++) {
+        total += strlen(ecmd->argv[i]);
+        if (ecmd->argv[i+1]) total += 1; 
+      }
+
+      if (total > 512) {
+        const char *err = "Message too long\n";
+        write(1, err, strlen(err));
+        exit(0);
+      }
+
+      char *msg = malloc(total + 1);
+      if (!msg) exit(1);
+      int pos = 0;
+      for (int j = 1; ecmd->argv[j]; j++) {
+          int n = strlen(ecmd->argv[j]);
+          memcpy(msg + pos, ecmd->argv[j], n);
+          pos += n;
+          if (ecmd->argv[j+1]) {
+              msg[pos++] = ' ';
+          }
+      }
+      msg[pos] = '\0';
+  
+      char *p = osfind(msg);
+      if (p) {
+          int prefix_len = p - msg;
+          const char *BLUE  = "\x1b[34m";
+          const char *RESET = "\x1b[0m";
+
+          write(1, msg, prefix_len);
+          write(1, BLUE,  strlen(BLUE));
+          write(1, "os",    2);
+          write(1, RESET,   strlen(RESET));
+          write(1, p + 2,  strlen(p + 2));
+          write(1, "\n",    1);
+      }
+      else {
+          write(1, msg, strlen(msg));
+          write(1, "\n", 1);
+      }
+  
+      free(msg);
+      exit(0); 
+    }
     exec(ecmd->argv[0], ecmd->argv);
     fprintf(2, "exec %s failed\n", ecmd->argv[0]);
     break;
