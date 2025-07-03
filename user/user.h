@@ -23,6 +23,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 uint64 trigger(void);
+int thread(void *start_thread, int *stack_address, void *arg);
+int jointhread(int id);
 
 // ulib.c
 int stat(const char*, struct stat*);
